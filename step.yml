@@ -52,7 +52,7 @@ inputs:
       description: |
         calabash-cucumber gem version to use.
 
-        __If this input specifies the gem version, it will be used, even `gem_file_path` provided.__
+        __If this input specifies the gem version, this version will be used, even `gem_file_path` provided.__
 
         If `calabash_cucumber_version` not specified:
 
@@ -66,7 +66,6 @@ inputs:
 
         If Gemfile not exist or does not contain calabash-cucumber gem:
 
-        - gem version will be used specified by `calabash_cucumber_version`
         - if `calabash_cucumber_version` not specified, latest version will be used
 outputs:
   - BITRISE_XAMARIN_TEST_RESULT:
