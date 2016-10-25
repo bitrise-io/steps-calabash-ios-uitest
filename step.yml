@@ -13,8 +13,15 @@ type_tags:
 is_requires_admin_user: true
 is_always_run: false
 is_skippable: false
-dependencies: []
-run_if: ""
+deps:
+  brew:
+  - name: go
+  apt_get:
+  - name: golang
+    bin_name: go
+toolkit:
+  go:
+    package_name: github.com/bitrise-steplib/steps-calabash-ios-uitest
 inputs:
   - simulator_device: iPhone 6
     opts:
@@ -30,16 +37,36 @@ inputs:
         * iPad
         * iPad Air
       is_required: true
-      is_expand: true
-  - simulator_os_version:
+  - simulator_os_version: latest
     opts:
       title: "OS version"
       description: |
         A couple of format examples:
         * iOS 8.4
-        * iOS 9.1
-      is_required: false
-      is_expand: true
+        * iOS 9.3
+        * latest
+      is_required: true
+  - calabash_cucumber_version: 
+    opts:
+      title: "calabash-cucumber gem version"
+      description: |
+        calabash-cucumber gem version to use.
+
+        __If this input specifies the gem version, this version will be used, even `gem_file_path` provided.__
+
+        If `calabash_cucumber_version` not specified:
+
+        - gem version will be used specified by Gemfile at `gem_file_path`
+        - if Gemfile not exist with calabash-cucumber gem, latest version will be used
+  - gem_file_path: $BITRISE_SOURCE_DIR/Gemfile
+    opts:
+      title: "Gemfile path"
+      description: |
+        Path to the Gemfile which contains calabash-cucumber gem.
+
+        If Gemfile not exist or does not contain calabash-cucumber gem:
+
+        - if `calabash_cucumber_version` not specified, latest version will be used
 outputs:
   - BITRISE_XAMARIN_TEST_RESULT:
     opts:
