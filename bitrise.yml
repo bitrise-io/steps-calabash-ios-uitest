@@ -9,7 +9,6 @@ app:
   - BITRISE_PROJECT_PATH: CreditCardValidator.iOS.sln
   - BITRISE_XAMARIN_CONFIGURATION: Debug
   - BITRISE_XAMARIN_PLATFORM: iPhoneSimulator
-  - ENABLE_TEST_CLOUD: true
 
 workflows:
   test:
@@ -48,6 +47,7 @@ workflows:
         - simulator_device: iPhone 6
         - calabash_cucumber_version: "0.20.0"
     - script:
+        is_always_run: true
         inputs:
         - content: |-
             echo "BITRISE_XAMARIN_TEST_RESULT: $BITRISE_XAMARIN_TEST_RESULT"
