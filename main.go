@@ -244,7 +244,11 @@ func main() {
 		useBundler = false
 	}
 
-	log.Done("using calabash-cucumber version: %s", calabashCucumberVersion)
+	if calabashCucumberVersion == "" {
+		log.Done("using calabash-cucumber latest version")
+	} else {
+		log.Done("using calabash-cucumber version: %s", calabashCucumberVersion)
+	}
 	// ---
 
 	//
@@ -320,10 +324,7 @@ func main() {
 			}
 
 			for _, installCommand := range installCommands {
-				args := []string{installCommand.GetCmd().Path}
-				args = append(args, installCommand.GetCmd().Args...)
-
-				log.Detail("$ %s", cmdex.PrintableCommandArgs(false, args))
+				log.Detail("$ %s", cmdex.PrintableCommandArgs(false, installCommand.GetCmd().Args))
 
 				if err := installCommand.Run(); err != nil {
 					registerFail("command failed, error: %s", err)
@@ -361,4 +362,7 @@ func main() {
 	}
 	// ---
 
+	if err := exportEnvironmentWithEnvman("BITRISE_XAMARIN_TEST_RESULT", "succeeded"); err != nil {
+		log.Warn("Failed to export environment: %s, error: %s", "BITRISE_XAMARIN_TEST_RESULT", err)
+	}
 }

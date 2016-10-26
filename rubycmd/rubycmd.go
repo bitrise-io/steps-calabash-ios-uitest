@@ -109,7 +109,14 @@ func (command RubyCommandModel) Command(useBundle bool, cmdSlice []string) (*cmd
 func (command RubyCommandModel) GemInstallCommands(gem, version string) ([]*cmdex.CommandModel, error) {
 	commands := []*cmdex.CommandModel{}
 
-	cmdSlice := []string{"gem", "install", gem, "-v", version, "--no-document"}
+	cmdSlice := []string{"gem", "install", gem}
+
+	if version != "" {
+		cmdSlice = append(cmdSlice, "-v", version)
+	}
+
+	cmdSlice = append(cmdSlice, "--no-document")
+
 	cmd, err := command.Command(false, cmdSlice)
 	if err != nil {
 		return []*cmdex.CommandModel{}, err
