@@ -1,6 +1,11 @@
-## Changelog (Current version: 1.0.0)
+## Changelog (Current version: 1.1.0)
 
 -----------------
+
+### 1.1.0 (2016 Oct 26)
+
+* [1a4f6bb] prepare for 1.1.0
+* [c693338] bitrise.yml cleanup, logging updates, export BITRISE_XAMARIN_TEST_RESULT success, gem install cmd fix (#7)
 
 ### 1.0.0 (2016 Oct 25)
 
@@ -19,4 +24,4 @@
 
 -----------------
 
-Updated: 2016 Oct 25
+Updated: 2016 Oct 26
