@@ -7,7 +7,7 @@ support_url: https://github.com/bitrise-steplib/steps-calabash-ios-uitest/issues
 host_os_tags:
   - osx-10.10
 project_type_tags:
-  - xamarin
+  - ios
 type_tags:
   - testing
 is_requires_admin_user: true

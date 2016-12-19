@@ -44,10 +44,10 @@ func (configs ConfigsModel) print() {
 
 func (configs ConfigsModel) validate() error {
 	if configs.SimulatorDevice == "" {
-		return errors.New("No SimulatorDevice parameter specified!")
+		return errors.New("no SimulatorDevice parameter specified")
 	}
 	if configs.SimulatorOsVersion == "" {
-		return errors.New("No SimulatorOsVersion parameter specified!")
+		return errors.New("no SimulatorOsVersion parameter specified")
 	}
 
 	return nil
