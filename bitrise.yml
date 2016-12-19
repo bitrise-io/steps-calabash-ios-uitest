@@ -45,7 +45,6 @@ workflows:
         title: Step Test
         inputs:
         - simulator_device: iPhone 6
-        - calabash_cucumber_version: "0.20.0"
     - script:
         is_always_run: true
         inputs:
