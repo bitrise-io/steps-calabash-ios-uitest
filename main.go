@@ -203,8 +203,6 @@ func main() {
 	fmt.Println()
 	log.Infof("Installing calabash-cucumber gem...")
 
-	cucumberArgs := []string{}
-
 	// If Gemfile given with calabash-cucumber and calabash_cucumber_version input does not override cucumber version
 	// Run `bundle install`
 	// Run cucumber with `bundle exec`
@@ -224,11 +222,7 @@ func main() {
 			registerFail("bundle install failed, error: %s", err)
 		}
 		// ---
-
-		cucumberArgs = []string{"bundle", "exec"}
 	}
-
-	cucumberArgs = append(cucumberArgs, "cucumber")
 
 	// If no need to use bundler
 	if !useBundler {
@@ -285,6 +279,11 @@ func main() {
 	// Run cucumber
 	fmt.Println()
 	log.Infof("Running cucumber test...")
+
+	cucumberArgs := []string{"cucumber"}
+	if useBundler {
+		cucumberArgs = append([]string{"bundle", "exec"}, cucumberArgs...)
+	}
 
 	cucumberCmd, err := rubycommand.NewFromSlice(cucumberArgs...)
 	if err != nil {
