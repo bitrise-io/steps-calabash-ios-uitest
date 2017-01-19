@@ -7,7 +7,7 @@ support_url: https://github.com/bitrise-steplib/steps-calabash-ios-uitest/issues
 host_os_tags:
   - osx-10.10
 project_type_tags:
-  - xamarin
+  - ios
 type_tags:
   - testing
 is_requires_admin_user: true
@@ -46,6 +46,25 @@ inputs:
         * iOS 9.3
         * latest
       is_required: true
+  - work_dir: 
+    opts:
+      title: "Directory of your calabash features"
+      description: |-
+        Path to the directory, which contains your calabash features directory.
+
+        For emxaple:
+        If calabash features directory path is: `CreditCardValidator.iOS/features`,  
+        then work_dir should be: `CreditCardValidator.iOS`
+      is_required: true
+  - gem_file_path: $work_dir/Gemfile
+    opts:
+      title: "Gemfile path"
+      description: |
+        Path to the Gemfile which contains calabash-cucumber gem.
+
+        If Gemfile not exist or does not contain calabash-cucumber gem:
+
+        - if `calabash_cucumber_version` input not specified, latest version will be used
   - calabash_cucumber_version: 
     opts:
       title: "calabash-cucumber gem version"
@@ -58,15 +77,6 @@ inputs:
 
         - gem version will be used specified by Gemfile at `gem_file_path`
         - if Gemfile not exist with calabash-cucumber gem, latest version will be used
-  - gem_file_path: $BITRISE_SOURCE_DIR/Gemfile
-    opts:
-      title: "Gemfile path"
-      description: |
-        Path to the Gemfile which contains calabash-cucumber gem.
-
-        If Gemfile not exist or does not contain calabash-cucumber gem:
-
-        - if `calabash_cucumber_version` not specified, latest version will be used
 outputs:
   - BITRISE_XAMARIN_TEST_RESULT:
     opts:
