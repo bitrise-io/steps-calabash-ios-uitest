@@ -40,7 +40,8 @@ workflows:
         - clone_depth: ""
     - nuget-restore:
     - xamarin-archive:
-        is_skippable: true
+        inputs:
+        - project_type_whitelist: ios
     - path::./:
         title: Step Test
         inputs:
