@@ -45,7 +45,7 @@ workflows:
         title: Step Test
         inputs:
         - simulator_device: iPhone 6
-        - work_dir: iOS
+        - work_dir: ./CreditCardValidator.iOS
     - script:
         is_always_run: true
         inputs:
