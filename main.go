@@ -20,16 +20,19 @@ import (
 type ConfigsModel struct {
 	SimulatorDevice         string
 	SimulatorOsVersion      string
-	CalabashCucumberVersion string
+	WorkDir                 string
 	GemFilePath             string
+	CalabashCucumberVersion string
+	AppPath                 string
 }
 
 func createConfigsModelFromEnvs() ConfigsModel {
 	return ConfigsModel{
 		SimulatorDevice:         os.Getenv("simulator_device"),
 		SimulatorOsVersion:      os.Getenv("simulator_os_version"),
-		CalabashCucumberVersion: os.Getenv("calabash_cucumber_version"),
+		WorkDir:                 os.Getenv("work_dir"),
 		GemFilePath:             os.Getenv("gem_file_path"),
+		CalabashCucumberVersion: os.Getenv("calabash_cucumber_version"),
 	}
 }
 
@@ -37,16 +40,27 @@ func (configs ConfigsModel) print() {
 	log.Infof("Configs:")
 	log.Printf("- SimulatorDevice: %s", configs.SimulatorDevice)
 	log.Printf("- SimulatorOsVersion: %s", configs.SimulatorOsVersion)
-	log.Printf("- CalabashCucumberVersion: %s", configs.CalabashCucumberVersion)
+	log.Printf("- WorkDir: %s", configs.WorkDir)
 	log.Printf("- GemFilePath: %s", configs.GemFilePath)
+	log.Printf("- CalabashCucumberVersion: %s", configs.CalabashCucumberVersion)
 }
 
 func (configs ConfigsModel) validate() error {
 	if configs.SimulatorDevice == "" {
 		return errors.New("no SimulatorDevice parameter specified")
 	}
+
 	if configs.SimulatorOsVersion == "" {
 		return errors.New("no SimulatorOsVersion parameter specified")
+	}
+
+	if configs.WorkDir == "" {
+		return errors.New("no WorkDir parameter specified")
+	}
+	if exist, err := pathutil.IsDirExists(configs.WorkDir); err != nil {
+		return fmt.Errorf("failed to check if WorkDir exist, error: %s", err)
+	} else if !exist {
+		return fmt.Errorf("WorkDir directory not exists at: %s", configs.WorkDir)
 	}
 
 	return nil
@@ -150,16 +164,28 @@ func main() {
 	fmt.Println()
 	log.Infof("Determining calabash-cucumber version...")
 
-	calabashCucumberVersion := ""
+	workDir, err := pathutil.AbsPath(configs.WorkDir)
+	if err != nil {
+		registerFail("Failed to expand WorkDir (%s), error: %s", configs.WorkDir, err)
+	}
+
+	gemFilePath := ""
+	if configs.GemFilePath != "" {
+		gemFilePath, err = pathutil.AbsPath(configs.GemFilePath)
+		if err != nil {
+			registerFail("Failed to expand GemFilePath (%s), error: %s", configs.GemFilePath, err)
+		}
+	}
+
 	useBundler := false
 
-	if configs.GemFilePath != "" {
-		if exist, err := pathutil.IsPathExists(configs.GemFilePath); err != nil {
-			registerFail("Failed to check if Gemfile exists at (%s) exist, error: %s", configs.GemFilePath, err)
+	if gemFilePath != "" {
+		if exist, err := pathutil.IsPathExists(gemFilePath); err != nil {
+			registerFail("Failed to check if Gemfile exists at (%s) exist, error: %s", gemFilePath, err)
 		} else if exist {
-			log.Printf("Gemfile exists at: %s", configs.GemFilePath)
+			log.Printf("Gemfile exists at: %s", gemFilePath)
 
-			gemfileDir := filepath.Dir(configs.GemFilePath)
+			gemfileDir := filepath.Dir(gemFilePath)
 			gemfileLockPth := filepath.Join(gemfileDir, "Gemfile.lock")
 
 			if exist, err := pathutil.IsPathExists(gemfileLockPth); err != nil {
@@ -174,90 +200,38 @@ func main() {
 
 				log.Printf("calabash-cucumber version in Gemfile.lock: %s", version)
 
-				calabashCucumberVersion = version
 				useBundler = true
 			} else {
 				log.Warnf("Gemfile.lock doest no find with calabash-cucumber gem at: %s", gemfileLockPth)
 			}
 		} else {
-			log.Warnf("Gemfile doest no find with calabash-cucumber gem at: %s", configs.GemFilePath)
+			log.Warnf("Gemfile doest no find with calabash-cucumber gem at: %s", gemFilePath)
 		}
 	}
 
 	if configs.CalabashCucumberVersion != "" {
-		log.Printf("calabash-cucumber version in configs: %s", configs.CalabashCucumberVersion)
-
-		calabashCucumberVersion = configs.CalabashCucumberVersion
-		useBundler = false
-	}
-
-	if calabashCucumberVersion == "" {
-		log.Donef("using calabash-cucumber latest version")
+		log.Donef("using calabash-cucumber version: %s", configs.CalabashCucumberVersion)
+	} else if useBundler {
+		log.Donef("using calabash-cucumber with bundler")
 	} else {
-		log.Donef("using calabash-cucumber version: %s", calabashCucumberVersion)
+		log.Donef("using calabash-cucumber latest version")
 	}
+
 	// ---
 
 	//
 	// Intsalling cucumber gem
 	fmt.Println()
-	log.Infof("Installing calabash-cucumber gem...")
+	log.Infof("Installing calabash-cucumber...")
 
-	// If Gemfile given with calabash-cucumber and calabash_cucumber_version input does not override cucumber version
-	// Run `bundle install`
-	// Run cucumber with `bundle exec`
-	if useBundler {
-		// bundle install
-		bundleInstallCmd, err := rubycommand.New("bundle", "install", "--jobs", "20", "--retry", "5")
+	if configs.CalabashCucumberVersion != "" {
+		installed, err := rubycommand.IsGemInstalled("calabash-cucumber", configs.CalabashCucumberVersion)
 		if err != nil {
-			registerFail("Failed to create command, error: %s", err)
+			registerFail("Failed to check if calabash-cucumber (v%s) installed, error: %s", configs.CalabashCucumberVersion, err)
 		}
 
-		bundleInstallCmd.AppendEnvs("BUNDLE_GEMFILE=" + configs.GemFilePath)
-		bundleInstallCmd.SetStdout(os.Stdout).SetStderr(os.Stderr)
-
-		log.Printf("$ %s", bundleInstallCmd.PrintableCommandArgs())
-
-		if err := bundleInstallCmd.Run(); err != nil {
-			registerFail("bundle install failed, error: %s", err)
-		}
-		// ---
-	}
-
-	// If no need to use bundler
-	if !useBundler {
-		if calabashCucumberVersion != "" {
-			// ... and cucumber version detected
-			// Install calabash-cucumber detetcted version with `gem install`
-			// Append version param to cucumber command
-			installed, err := rubycommand.IsGemInstalled("calabash-cucumber", calabashCucumberVersion)
-			if err != nil {
-				registerFail("Failed to check if calabash-cucumber (v%s) installed, error: %s", calabashCucumberVersion, err)
-			}
-
-			if !installed {
-				installCommands, err := rubycommand.GemInstall("calabash-cucumber", calabashCucumberVersion)
-				if err != nil {
-					registerFail("Failed to create gem install commands, error: %s", err)
-				}
-
-				for _, installCommand := range installCommands {
-					log.Printf("$ %s", installCommand.PrintableCommandArgs())
-
-					installCommand.SetStdout(os.Stdout).SetStderr(os.Stderr)
-
-					if err := installCommand.Run(); err != nil {
-						registerFail("command failed, error: %s", err)
-					}
-				}
-			} else {
-				log.Printf("calabash-cucumber %s installed", calabashCucumberVersion)
-			}
-		} else {
-			// ... and using latest version of cucumber
-			// Install calabash-cucumber latest version with `gem install`
-
-			installCommands, err := rubycommand.GemInstall("calabash-cucumber", "")
+		if !installed {
+			installCommands, err := rubycommand.GemInstall("calabash-cucumber", configs.CalabashCucumberVersion)
 			if err != nil {
 				registerFail("Failed to create gem install commands, error: %s", err)
 			}
@@ -271,9 +245,39 @@ func main() {
 					registerFail("command failed, error: %s", err)
 				}
 			}
+		} else {
+			log.Printf("calabash-cucumber %s installed", configs.CalabashCucumberVersion)
+		}
+	} else if useBundler {
+		bundleInstallCmd, err := rubycommand.New("bundle", "install", "--jobs", "20", "--retry", "5")
+		if err != nil {
+			registerFail("Failed to create command, error: %s", err)
+		}
+
+		bundleInstallCmd.AppendEnvs("BUNDLE_GEMFILE=" + gemFilePath)
+		bundleInstallCmd.SetStdout(os.Stdout).SetStderr(os.Stderr)
+
+		log.Printf("$ %s", bundleInstallCmd.PrintableCommandArgs())
+
+		if err := bundleInstallCmd.Run(); err != nil {
+			registerFail("bundle install failed, error: %s", err)
+		}
+	} else {
+		installCommands, err := rubycommand.GemInstall("calabash-cucumber", "")
+		if err != nil {
+			registerFail("Failed to create gem install commands, error: %s", err)
+		}
+
+		for _, installCommand := range installCommands {
+			log.Printf("$ %s", installCommand.PrintableCommandArgs())
+
+			installCommand.SetStdout(os.Stdout).SetStderr(os.Stderr)
+
+			if err := installCommand.Run(); err != nil {
+				registerFail("command failed, error: %s", err)
+			}
 		}
 	}
-	// ---
 
 	//
 	// Run cucumber
@@ -281,8 +285,13 @@ func main() {
 	log.Infof("Running cucumber test...")
 
 	cucumberArgs := []string{"cucumber"}
-	if useBundler {
+	cucumberEnvs := []string{"DEVICE_TARGET=" + simulatorInfo.ID}
+
+	if configs.CalabashCucumberVersion != "" {
+		cucumberArgs = append(cucumberArgs, fmt.Sprintf("_%s_", configs.CalabashCucumberVersion))
+	} else if useBundler {
 		cucumberArgs = append([]string{"bundle", "exec"}, cucumberArgs...)
+		cucumberEnvs = append(cucumberEnvs, "BUNDLE_GEMFILE="+gemFilePath)
 	}
 
 	cucumberCmd, err := rubycommand.NewFromSlice(cucumberArgs...)
@@ -290,12 +299,8 @@ func main() {
 		registerFail("Failed to create command, error: %s", err)
 	}
 
-	cucumberEnvs := []string{"DEVICE_TARGET=" + simulatorInfo.ID}
-	if useBundler {
-		cucumberEnvs = append(cucumberEnvs, "BUNDLE_GEMFILE="+configs.GemFilePath)
-	}
-
 	cucumberCmd.AppendEnvs(cucumberEnvs...)
+	cucumberCmd.SetDir(workDir)
 	cucumberCmd.SetStdout(os.Stdout).SetStderr(os.Stderr)
 
 	log.Printf("$ %s", cucumberCmd.PrintableCommandArgs())
