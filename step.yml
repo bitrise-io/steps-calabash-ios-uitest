@@ -42,6 +42,19 @@ inputs:
         If Gemfile not exist or does not contain calabash-cucumber gem:
 
         - if `calabash_cucumber_version` input not specified, latest version will be used
+  - app_path: $BITRISE_APP_PATH
+    opts:
+      title: "Path to the iOS .app file to test"
+      description: |-
+        Path to the iOS .app file, which supports selected simulator `Device` architecture.
+
+        __In case of Xamarin .app file:__
+
+        You can ensure `Supported architectures` in your project's `Project Options/Code Generation and Runtime/Supported architectures`.
+        
+        If `i386` architecture is selected, simulator device should be a 32-bit device.
+        If `x86_64` architecture is selected, simulator device should be a 64-bit device.
+        If `i386 + x86_64` architecture is selected, simulator can be both 32-bit and 64-bit device.
   - simulator_device: iPhone 6
     opts:
       title: Device
