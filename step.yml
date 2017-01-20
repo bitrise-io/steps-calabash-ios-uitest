@@ -23,6 +23,25 @@ toolkit:
   go:
     package_name: github.com/bitrise-steplib/steps-calabash-ios-uitest
 inputs:
+  - work_dir: 
+    opts:
+      title: "Directory of your calabash features"
+      description: |-
+        Path to the directory, which contains your calabash features directory.
+
+        For emxaple:
+        If calabash features directory path is: `CreditCardValidator.iOS/features`,  
+        then work_dir should be: `CreditCardValidator.iOS`
+      is_required: true
+  - gem_file_path: $work_dir/Gemfile
+    opts:
+      title: "Gemfile path"
+      description: |
+        Path to the Gemfile which contains calabash-cucumber gem.
+
+        If Gemfile not exist or does not contain calabash-cucumber gem:
+
+        - if `calabash_cucumber_version` input not specified, latest version will be used
   - simulator_device: iPhone 6
     opts:
       title: Device
@@ -46,25 +65,6 @@ inputs:
         * iOS 9.3
         * latest
       is_required: true
-  - work_dir: 
-    opts:
-      title: "Directory of your calabash features"
-      description: |-
-        Path to the directory, which contains your calabash features directory.
-
-        For emxaple:
-        If calabash features directory path is: `CreditCardValidator.iOS/features`,  
-        then work_dir should be: `CreditCardValidator.iOS`
-      is_required: true
-  - gem_file_path: $work_dir/Gemfile
-    opts:
-      title: "Gemfile path"
-      description: |
-        Path to the Gemfile which contains calabash-cucumber gem.
-
-        If Gemfile not exist or does not contain calabash-cucumber gem:
-
-        - if `calabash_cucumber_version` input not specified, latest version will be used
   - calabash_cucumber_version: 
     opts:
       title: "calabash-cucumber gem version"
