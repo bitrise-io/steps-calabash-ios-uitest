@@ -1,6 +1,12 @@
-## Changelog (Current version: 1.2.0)
+## Changelog (Current version: 1.2.1)
 
 -----------------
+
+### 1.2.1 (2017 Jan 20)
+
+* [832babf] prepare for 1.2.1
+* [890d377] support `i386 + x86_64` app files (#9)
+* [42a0acb] step.yml update
 
 ### 1.2.0 (2017 Jan 20)
 
