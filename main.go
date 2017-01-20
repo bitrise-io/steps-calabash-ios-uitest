@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/bitrise-core/bitrise-init/utility"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/rubycommand"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -18,42 +19,42 @@ import (
 
 // ConfigsModel ...
 type ConfigsModel struct {
-	SimulatorDevice         string
-	SimulatorOsVersion      string
-	WorkDir                 string
-	GemFilePath             string
+	WorkDir     string
+	GemFilePath string
+	AppPath     string
+
+	SimulatorDevice    string
+	SimulatorOsVersion string
+
 	CalabashCucumberVersion string
-	AppPath                 string
 }
 
 func createConfigsModelFromEnvs() ConfigsModel {
 	return ConfigsModel{
-		SimulatorDevice:         os.Getenv("simulator_device"),
-		SimulatorOsVersion:      os.Getenv("simulator_os_version"),
-		WorkDir:                 os.Getenv("work_dir"),
-		GemFilePath:             os.Getenv("gem_file_path"),
+		WorkDir:     os.Getenv("work_dir"),
+		GemFilePath: os.Getenv("gem_file_path"),
+		AppPath:     os.Getenv("app_path"),
+
+		SimulatorDevice:    os.Getenv("simulator_device"),
+		SimulatorOsVersion: os.Getenv("simulator_os_version"),
+
 		CalabashCucumberVersion: os.Getenv("calabash_cucumber_version"),
 	}
 }
 
 func (configs ConfigsModel) print() {
 	log.Infof("Configs:")
-	log.Printf("- SimulatorDevice: %s", configs.SimulatorDevice)
-	log.Printf("- SimulatorOsVersion: %s", configs.SimulatorOsVersion)
 	log.Printf("- WorkDir: %s", configs.WorkDir)
 	log.Printf("- GemFilePath: %s", configs.GemFilePath)
+	log.Printf("- AppPath: %s", configs.AppPath)
+
+	log.Printf("- SimulatorDevice: %s", configs.SimulatorDevice)
+	log.Printf("- SimulatorOsVersion: %s", configs.SimulatorOsVersion)
+
 	log.Printf("- CalabashCucumberVersion: %s", configs.CalabashCucumberVersion)
 }
 
 func (configs ConfigsModel) validate() error {
-	if configs.SimulatorDevice == "" {
-		return errors.New("no SimulatorDevice parameter specified")
-	}
-
-	if configs.SimulatorOsVersion == "" {
-		return errors.New("no SimulatorOsVersion parameter specified")
-	}
-
 	if configs.WorkDir == "" {
 		return errors.New("no WorkDir parameter specified")
 	}
@@ -61,6 +62,22 @@ func (configs ConfigsModel) validate() error {
 		return fmt.Errorf("failed to check if WorkDir exist, error: %s", err)
 	} else if !exist {
 		return fmt.Errorf("WorkDir directory not exists at: %s", configs.WorkDir)
+	}
+
+	if configs.AppPath != "" {
+		if exist, err := pathutil.IsDirExists(configs.AppPath); err != nil {
+			return fmt.Errorf("failed to check if AppPath exist, error: %s", err)
+		} else if !exist {
+			return fmt.Errorf("AppPath directory not exists at: %s", configs.AppPath)
+		}
+	}
+
+	if configs.SimulatorDevice == "" {
+		return errors.New("no SimulatorDevice parameter specified")
+	}
+
+	if configs.SimulatorOsVersion == "" {
+		return errors.New("no SimulatorOsVersion parameter specified")
 	}
 
 	return nil
@@ -121,6 +138,28 @@ func calabashCucumberVersionFromGemfileLock(gemfileLockPth string) (string, erro
 	return calabashCucumberFromGemfileLockContent(content), nil
 }
 
+func copyDir(src, dst string, contentOnly bool) error {
+	if !contentOnly {
+		return os.Rename(src, dst)
+	}
+
+	files, err := utility.ListPathInDirSortedByComponents(src, false)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		base := filepath.Base(file)
+		pth := filepath.Join(dst, base)
+
+		if err := os.Rename(file, pth); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func main() {
 	configs := createConfigsModelFromEnvs()
 
@@ -153,9 +192,66 @@ func main() {
 	}
 
 	log.Donef("Simulator (%s), id: (%s), status: %s", simulatorInfo.Name, simulatorInfo.ID, simulatorInfo.Status)
+	// ---
 
-	if err := os.Setenv("DEVICE_TARGET", simulatorInfo.ID); err != nil {
-		registerFail("Failed to set DEVICE_TARGET environment, error: %s", err)
+	// Ensure if app is compatible with simulator device
+	if configs.AppPath != "" {
+		monotouch32Dir := filepath.Join(configs.AppPath, ".monotouch-32")
+		monotouch32DirExist, err := pathutil.IsDirExists(monotouch32Dir)
+		if err != nil {
+			registerFail("Failed to check if path (%s) exist, error: %s", monotouch32Dir, err)
+		}
+
+		monotouch64Dir := filepath.Join(configs.AppPath, ".monotouch-64")
+		monotouch64DirExist, err := pathutil.IsDirExists(monotouch64Dir)
+		if err != nil {
+			registerFail("Failed to check if path (%s) exist, error: %s", monotouch64Dir, err)
+		}
+
+		if monotouch32DirExist && monotouch64DirExist {
+			fmt.Println()
+			log.Warnf("The .app file generated for 'i386 + x86_64' architecture")
+
+			is64Bit, err := simulator.Is64BitArchitecture(configs.SimulatorDevice)
+			if err != nil {
+				registerFail("Failed to check simulator architecture, error: %s", err)
+			}
+
+			log.Warnf("Simulator is 64-bit architecture: %v", is64Bit)
+
+			tmpDir, err := pathutil.NormalizedOSTempDirPath("_calabash_ios_")
+			if err != nil {
+				registerFail("Failed to create tmp dir, error: %s", err)
+			}
+
+			appName := filepath.Base(configs.AppPath)
+			newAppPath := filepath.Join(tmpDir, appName)
+
+			log.Warnf("Creating compatible .app file at: %s", newAppPath)
+
+			if err := command.CopyDir(configs.AppPath, tmpDir, false); err != nil {
+				registerFail("Failed to copy .app to (%s), error: %s", newAppPath, err)
+			}
+
+			newAppMonotouch32Dir := filepath.Join(newAppPath, ".monotouch-32")
+			newAppMonotouch64Dir := filepath.Join(newAppPath, ".monotouch-64")
+
+			if is64Bit {
+				log.Warnf("Copy files from .monotouch-64 dir...")
+
+				if err := command.CopyDir(newAppMonotouch64Dir, newAppPath, true); err != nil {
+					registerFail("Failed to copy .monotouch-64 files, error: %s", err)
+				}
+			} else {
+				log.Warnf("Copy files from .monotouch-32 dir...")
+
+				if err := command.CopyDir(newAppMonotouch32Dir, newAppPath, true); err != nil {
+					registerFail("Failed to copy .monotouch-32 files, error: %s", err)
+				}
+			}
+
+			configs.AppPath = newAppPath
+		}
 	}
 	// ---
 
@@ -286,6 +382,9 @@ func main() {
 
 	cucumberArgs := []string{"cucumber"}
 	cucumberEnvs := []string{"DEVICE_TARGET=" + simulatorInfo.ID}
+	if configs.AppPath != "" {
+		cucumberEnvs = append(cucumberEnvs, "APP="+configs.AppPath)
+	}
 
 	if configs.CalabashCucumberVersion != "" {
 		cucumberArgs = append(cucumberArgs, fmt.Sprintf("_%s_", configs.CalabashCucumberVersion))
