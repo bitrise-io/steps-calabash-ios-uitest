@@ -1,6 +1,11 @@
-## Changelog (Current version: 1.1.0)
+## Changelog (Current version: 1.2.0)
 
 -----------------
+
+### 1.2.0 (2017 Jan 20)
+
+* [b56ded6] prepare for 1.2.0
+* [93cc6e3] project type tag & go linter updates (#8)
 
 ### 1.1.0 (2016 Oct 26)
 
@@ -24,4 +29,4 @@
 
 -----------------
 
-Updated: 2016 Oct 26
+Updated: 2017 Jan 20
