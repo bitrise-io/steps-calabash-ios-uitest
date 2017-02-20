@@ -78,6 +78,11 @@ inputs:
         * iOS 9.3
         * latest
       is_required: true
+  - additional_options: --format html --out $BITRISE_DEPLOY_DIR/calabash-android_report.html
+    opts:
+      title: Additional options for `cucumber` call
+      description: |
+        Options added to the end of the `cucumber` call.
   - calabash_cucumber_version: 
     opts:
       title: "calabash-cucumber gem version"
