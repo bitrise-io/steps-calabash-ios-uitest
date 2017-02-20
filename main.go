@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-tools/go-xcode/simulator"
+	shellquote "github.com/kballard/go-shellquote"
 )
 
 // ConfigsModel ...
@@ -22,6 +23,7 @@ type ConfigsModel struct {
 	WorkDir     string
 	GemFilePath string
 	AppPath     string
+	Options     string
 
 	SimulatorDevice    string
 	SimulatorOsVersion string
@@ -34,6 +36,7 @@ func createConfigsModelFromEnvs() ConfigsModel {
 		WorkDir:     os.Getenv("work_dir"),
 		GemFilePath: os.Getenv("gem_file_path"),
 		AppPath:     os.Getenv("app_path"),
+		Options:     os.Getenv("additional_options"),
 
 		SimulatorDevice:    os.Getenv("simulator_device"),
 		SimulatorOsVersion: os.Getenv("simulator_os_version"),
@@ -47,6 +50,7 @@ func (configs ConfigsModel) print() {
 	log.Printf("- WorkDir: %s", configs.WorkDir)
 	log.Printf("- GemFilePath: %s", configs.GemFilePath)
 	log.Printf("- AppPath: %s", configs.AppPath)
+	log.Printf("- Options: %s", configs.Options)
 
 	log.Printf("- SimulatorDevice: %s", configs.SimulatorDevice)
 	log.Printf("- SimulatorOsVersion: %s", configs.SimulatorOsVersion)
@@ -168,6 +172,11 @@ func main() {
 
 	if err := configs.validate(); err != nil {
 		registerFail("Issue with input: %s", err)
+	}
+
+	options, err := shellquote.Split(configs.Options)
+	if err != nil {
+		registerFail("Failed to split additional options (%s), error: %s", configs.Options, err)
 	}
 
 	// Get Simulator Infos
@@ -380,18 +389,20 @@ func main() {
 	fmt.Println()
 	log.Infof("Running cucumber test...")
 
-	cucumberArgs := []string{"cucumber"}
 	cucumberEnvs := []string{"DEVICE_TARGET=" + simulatorInfo.ID}
 	if configs.AppPath != "" {
 		cucumberEnvs = append(cucumberEnvs, "APP="+configs.AppPath)
 	}
 
+	cucumberArgs := []string{"cucumber"}
 	if configs.CalabashCucumberVersion != "" {
 		cucumberArgs = append(cucumberArgs, fmt.Sprintf("_%s_", configs.CalabashCucumberVersion))
 	} else if useBundler {
 		cucumberArgs = append([]string{"bundle", "exec"}, cucumberArgs...)
 		cucumberEnvs = append(cucumberEnvs, "BUNDLE_GEMFILE="+gemFilePath)
 	}
+
+	cucumberArgs = append(cucumberArgs, options...)
 
 	cucumberCmd, err := rubycommand.NewFromSlice(cucumberArgs...)
 	if err != nil {
