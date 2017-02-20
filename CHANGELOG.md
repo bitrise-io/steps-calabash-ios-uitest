@@ -1,6 +1,11 @@
-## Changelog (Current version: 1.2.1)
+## Changelog (Current version: 1.3.0)
 
 -----------------
+
+### 1.3.0 (2017 Feb 20)
+
+* [cb3745d] preare for 1.3.0
+* [1c04fce] additional options (#10)
 
 ### 1.2.1 (2017 Jan 20)
 
@@ -35,4 +40,4 @@
 
 -----------------
 
-Updated: 2017 Jan 20
+Updated: 2017 Feb 20
