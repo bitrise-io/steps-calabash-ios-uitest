@@ -417,7 +417,26 @@ func main() {
 	fmt.Println()
 
 	if err := cucumberCmd.Run(); err != nil {
-		registerFail("cucumber failed, error: %s", err)
+		log.Errorf("cucumber failed, error: %s", err)
+		if err := exportEnvironmentWithEnvman("BITRISE_XAMARIN_TEST_RESULT", "failed"); err != nil {
+			log.Warnf("Failed to export environment: %s, error: %s", "BITRISE_XAMARIN_TEST_RESULT", err)
+		}
+
+		// find --out flag and get the next index containing output file's pth
+		outputFilePth := ""
+		for i, flag := range options {
+			if flag == "--out" {
+				outputFilePth = options[i+1]
+				break
+			}
+		}
+		if outputFilePth != "" {
+			outputFileContent, err := fileutil.ReadStringFromFile(outputFilePth)
+			if err != nil {
+				registerFail("Failed to read output file (%s), error: %s", outputFilePth, err)
+			}
+			log.Printf(outputFileContent)
+		}
 	}
 	// ---
 
