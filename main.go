@@ -437,6 +437,7 @@ func main() {
 			}
 			log.Printf(outputFileContent)
 		}
+		os.Exit(1)
 	}
 	// ---
 
