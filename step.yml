@@ -78,7 +78,7 @@ inputs:
         * iOS 9.3
         * latest
       is_required: true
-  - additional_options: --format html --out $BITRISE_DEPLOY_DIR/calabash-android_report.html
+  - additional_options: --format html --out $BITRISE_DEPLOY_DIR/calabash-ios_report.html
     opts:
       title: Additional options for `cucumber` call
       description: |
