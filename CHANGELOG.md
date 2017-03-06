@@ -1,6 +1,12 @@
-## Changelog (Current version: 1.3.0)
+## Changelog (Current version: 1.3.1)
 
 -----------------
+
+### 1.3.1 (2017 Mar 06)
+
+* [63fd7eb] Prepare for 1.3.1
+* [ce99323] added os.exit and enhanced error log printing (#12)
+* [f178cfe] Added print output log file on cucumber fail (#11)
 
 ### 1.3.0 (2017 Feb 20)
 
@@ -40,4 +46,4 @@
 
 -----------------
 
-Updated: 2017 Feb 20
+Updated: 2017 Mar 06
