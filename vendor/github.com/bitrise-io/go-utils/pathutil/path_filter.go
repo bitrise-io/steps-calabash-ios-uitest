@@ -1,51 +1,17 @@
-package utility
+package pathutil
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/bitrise-io/go-utils/fileutil"
 )
-
-// CaseInsensitiveContains ...
-func CaseInsensitiveContains(s, substr string) bool {
-	s, substr = strings.ToUpper(s), strings.ToUpper(substr)
-	return strings.Contains(s, substr)
-}
-
-// ListPathInDirSortedByComponents ...
-func ListPathInDirSortedByComponents(searchDir string, relPath bool) ([]string, error) {
-	searchDir, err := filepath.Abs(searchDir)
-	if err != nil {
-		return []string{}, err
-	}
-
-	fileList := []string{}
-
-	if err := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
-		if relPath {
-			rel, err := filepath.Rel(searchDir, path)
-			if err != nil {
-				return err
-			}
-			path = rel
-		}
-
-		fileList = append(fileList, path)
-
-		return nil
-	}); err != nil {
-		return []string{}, err
-	}
-	return SortPathsByComponents(fileList)
-}
 
 // FilterPaths ...
 func FilterPaths(fileList []string, filters ...FilterFunc) ([]string, error) {
-	filtered := []string{}
+	var filtered []string
 
 	for _, pth := range fileList {
 		allowed := true
@@ -66,13 +32,13 @@ func FilterPaths(fileList []string, filters ...FilterFunc) ([]string, error) {
 }
 
 // FilterFunc ...
-type FilterFunc func(pth string) (bool, error)
+type FilterFunc func(string) (bool, error)
 
 // BaseFilter ...
 func BaseFilter(base string, allowed bool) FilterFunc {
 	return func(pth string) (bool, error) {
 		b := filepath.Base(pth)
-		return (allowed == strings.EqualFold(base, b)), nil
+		return allowed == strings.EqualFold(base, b), nil
 	}
 }
 
@@ -80,7 +46,7 @@ func BaseFilter(base string, allowed bool) FilterFunc {
 func ExtensionFilter(ext string, allowed bool) FilterFunc {
 	return func(pth string) (bool, error) {
 		e := filepath.Ext(pth)
-		return (allowed == strings.EqualFold(ext, e)), nil
+		return allowed == strings.EqualFold(ext, e), nil
 	}
 }
 
@@ -89,7 +55,7 @@ func RegexpFilter(pattern string, allowed bool) FilterFunc {
 	return func(pth string) (bool, error) {
 		re := regexp.MustCompile(pattern)
 		found := re.FindString(pth) != ""
-		return (allowed == found), nil
+		return allowed == found, nil
 	}
 }
 
@@ -103,7 +69,7 @@ func ComponentFilter(component string, allowed bool) FilterFunc {
 				found = true
 			}
 		}
-		return (allowed == found), nil
+		return allowed == found, nil
 	}
 }
 
@@ -118,7 +84,7 @@ func ComponentWithExtensionFilter(ext string, allowed bool) FilterFunc {
 				found = true
 			}
 		}
-		return (allowed == found), nil
+		return allowed == found, nil
 	}
 }
 
@@ -132,24 +98,46 @@ func IsDirectoryFilter(allowed bool) FilterFunc {
 		if fileInf == nil {
 			return false, errors.New("no file info available")
 		}
-		return (allowed == fileInf.IsDir()), nil
+		return allowed == fileInf.IsDir(), nil
 	}
 }
 
 // InDirectoryFilter ...
 func InDirectoryFilter(dir string, allowed bool) FilterFunc {
 	return func(pth string) (bool, error) {
-		in := (filepath.Dir(pth) == dir)
-		return (allowed == in), nil
+		in := filepath.Dir(pth) == dir
+		return allowed == in, nil
 	}
 }
 
-// FileContains ...
-func FileContains(pth, str string) (bool, error) {
-	content, err := fileutil.ReadStringFromFile(pth)
+// DirectoryContainsFileFilter returns a FilterFunc that checks if a directory contains a file
+func DirectoryContainsFileFilter(fileName string) FilterFunc {
+	return func(pth string) (bool, error) {
+		isDir, err := IsDirectoryFilter(true)(pth)
+		if err != nil {
+			return false, err
+		}
+		if !isDir {
+			return false, nil
+		}
+
+		absPath := filepath.Join(pth, fileName)
+		if _, err := os.Lstat(absPath); err != nil {
+			if !os.IsNotExist(err) {
+				return false, err
+			}
+			return false, nil
+		}
+		return true, nil
+	}
+}
+
+// FileContainsFilter ...
+func FileContainsFilter(pth, str string) (bool, error) {
+	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
 		return false, err
 	}
 
-	return strings.Contains(content, str), nil
+	return strings.Contains(string(bytes), str), nil
 }

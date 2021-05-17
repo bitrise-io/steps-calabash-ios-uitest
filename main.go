@@ -8,13 +8,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bitrise-core/bitrise-init/utility"
+	"github.com/bitrise-io/go-steputils/command/rubycommand"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/command/rubycommand"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-tools/go-xcode/simulator"
+	"github.com/bitrise-io/go-xcode/simulator"
 	shellquote "github.com/kballard/go-shellquote"
 )
 
@@ -147,7 +146,7 @@ func copyDir(src, dst string, contentOnly bool) error {
 		return os.Rename(src, dst)
 	}
 
-	files, err := utility.ListPathInDirSortedByComponents(src, false)
+	files, err := pathutil.ListPathInDirSortedByComponents(src, false)
 	if err != nil {
 		return err
 	}
@@ -345,7 +344,7 @@ func main() {
 		}
 
 		if !installed {
-			installCommands, err := rubycommand.GemInstall("calabash-cucumber", configs.CalabashCucumberVersion)
+			installCommands, err := rubycommand.GemInstall("calabash-cucumber", configs.CalabashCucumberVersion, false)
 			if err != nil {
 				registerFail("Failed to create gem install commands, error: %s", err)
 			}
@@ -377,7 +376,7 @@ func main() {
 			registerFail("bundle install failed, error: %s", err)
 		}
 	} else {
-		installCommands, err := rubycommand.GemInstall("calabash-cucumber", "")
+		installCommands, err := rubycommand.GemInstall("calabash-cucumber", "", false)
 		if err != nil {
 			registerFail("Failed to create gem install commands, error: %s", err)
 		}
@@ -413,7 +412,7 @@ func main() {
 
 	cucumberArgs = append(cucumberArgs, options...)
 
-	cucumberCmd, err := rubycommand.NewFromSlice(cucumberArgs...)
+	cucumberCmd, err := rubycommand.NewFromSlice(cucumberArgs)
 	if err != nil {
 		registerFail("Failed to create command, error: %s", err)
 	}
