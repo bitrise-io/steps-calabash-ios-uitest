@@ -1,6 +1,27 @@
-title: Calabash iOS UI test
-summary: Calabash iOS UI test step
-description: Calabash iOS UI test step
+title: "Calabash iOS UI Test"
+summary: |-
+  Runs Calabash iOS UI tests.
+description: |-
+  [This Step](https://github.com/bitrise-steplib/steps-calabash-ios-uitest) runs Calabash UI tests for iOS.
+
+  Before you start:
+  Make sure you have the Xcode Archive Step before the Calabash iOS UI test Step in your Workflow.
+
+  ### Configuring the Step
+  1. Add the path to the directory which contains your Calabash features directory in the **Directory of your calabash features** input.
+  2. In the **Gemfile path**, add the path to the Gemfile which contains calabash-cucumber gem.
+  3. Add the **Path to the iOS .app file** which supports the selected simulator device architecture.
+  4. Set a **Device** as it is shown in your Xcode's device selection dropdown UI, for example, `iPhone 6`.
+  5. Add the **OS version** where the format should be, for example, `iOS 8.4`, `latest`.
+  6. Add **Additional options for `cucumber` call** if needed. The options will be added to the end of the cucumber call.
+  7. Add the **calabash-cucumber gem version**. If this input specifies a gem version, that particular version will be used. If the `calabash_cucumber_version` is not specified, the gem version specified by Gemfile at `gem_file_path` will be used. If Gemfile does not exist with calabash-cucumber gem, the latest version will be used
+
+  ### Useful links
+  - [Testing with Bitrise](https://devcenter.bitrise.io/testing/testing-index/)
+
+  ### Related Steps
+  - [Xcode Analyze](https://www.bitrise.io/integrations/steps/xcode-analyze)
+  - [Flutter](https://www.bitrise.io/integrations/steps/flutter)
 website: https://github.com/bitrise-steplib/steps-calabash-ios-uitest
 source_code_url: https://github.com/bitrise-steplib/steps-calabash-ios-uitest
 support_url: https://github.com/bitrise-steplib/steps-calabash-ios-uitest/issues
