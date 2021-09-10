@@ -29,9 +29,8 @@ inputs:
       description: |-
         Path to the directory, which contains your calabash features directory.
 
-        For emxaple:
-        If calabash features directory path is: `CreditCardValidator.iOS/features`,  
-        then work_dir should be: `CreditCardValidator.iOS`
+        For example, if calabash features directory path is `CreditCardValidator.iOS/features`,  
+        then work_dir should be `CreditCardValidator.iOS`.
       is_required: true
   - gem_file_path: $work_dir/Gemfile
     opts:
@@ -39,9 +38,9 @@ inputs:
       description: |
         Path to the Gemfile which contains calabash-cucumber gem.
 
-        If Gemfile not exist or does not contain calabash-cucumber gem:
+        If Gemfile doesn't exist or doesn't contain calabash-cucumber gem:
 
-        - if `calabash_cucumber_version` input not specified, latest version will be used
+        - if `calabash_cucumber_version` input is not specified, then the latest version will be used.
   - app_path: $BITRISE_APP_PATH
     opts:
       title: "Path to the iOS .app file to test"
@@ -89,12 +88,12 @@ inputs:
       description: |
         calabash-cucumber gem version to use.
 
-        __If this input specifies the gem version, this version will be used, even `gem_file_path` provided.__
+        __If this input specifies the gem version, this version will be used, even if `gem_file_path` is provided.__
 
         If `calabash_cucumber_version` not specified:
 
         - gem version will be used specified by Gemfile at `gem_file_path`
-        - if Gemfile not exist with calabash-cucumber gem, latest version will be used
+        - if Gemfile doesn't exist with calabash-cucumber gem, then the latest version will be used.
 outputs:
   - BITRISE_XAMARIN_TEST_RESULT:
     opts:
